@@ -1,0 +1,23 @@
+services:
+  web:
+    image: php:8.1-apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/var/www/html
+      - ./api:/var/www/html/api
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./database/cinematch_db.sql:/docker-entrypoint-initdb.d/cinematch_db.sql:ro
+      - cinematch_data:/var/lib/mysql
+
+volumes:
+  cinematch_data:
