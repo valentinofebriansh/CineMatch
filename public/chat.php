@@ -25,7 +25,7 @@
                 CineMatch<span class="text-indigo-600">.</span>
             </a>
 
-            <form class="relative hidden w-72 sm:block" onsubmit="return false">
+            <form class="relative hidden w-72 sm:block" onsubmit="const q = this.querySelector('input').value.trim(); if(q) window.location.href='index.php?search=' + encodeURIComponent(q); return false;">
                 <input type="search" placeholder="Cari film..." class="w-full rounded-full border border-slate-200/90 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 shadow-md shadow-slate-200/60 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-200">
                 <svg class="absolute right-4 top-3 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="11" cy="11" r="7"/>
@@ -322,14 +322,6 @@
 
         // Formulir chat mengirim permintaan rekomendasi tanpa memuat ulang halaman.
         formulirChat.addEventListener("submit", kirimPermintaanRekomendasi);
-
-        // Jika terdapat parameter pencarian di URL (?q=...), jalankan otomatis saat halaman dibuka
-        const parameterUrl = new URLSearchParams(window.location.search);
-        const kueriAwal = parameterUrl.get('q');
-        if (kueriAwal && kueriAwal.trim() !== '') {
-            kolomPesan.value = kueriAwal.trim();
-            formulirChat.dispatchEvent(new Event('submit'));
-        }
     </script>
 </body>
 </html>

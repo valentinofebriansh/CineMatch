@@ -21,30 +21,37 @@
         <span class="absolute -right-36 top-1/3 h-96 w-96 rounded-full bg-teal-200/30 blur-3xl"></span>
     </div>
 
-    <!-- BAGIAN NAVBAR: Berisi navigasi beranda, tampilan pencarian, dan tautan ke halaman profil. -->
+    <!-- BAGIAN NAVBAR: Berisi navigasi beranda, search bar interaktif, dan tautan profil. -->
     <nav class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
         <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-5 px-5 sm:px-6">
-            <!-- Logo mengarah kembali ke halaman ini melalui index.php. -->
+            <!-- Logo mengarah kembali ke halaman beranda. -->
             <a href="index.php" class="shrink-0 text-2xl font-extrabold tracking-tight text-slate-900">
                 CineMatch<span class="text-indigo-600">.</span>
             </a>
 
-            <!-- Formulir Pencarian: Terhubung langsung ke Chatbot AI Rekomendasi. -->
-            <form class="relative hidden w-72 sm:block" onsubmit="const q = this.querySelector('input').value.trim(); if(q) window.location.href='chat.php?q=' + encodeURIComponent(q); return false;">
-                <input
-                    type="search"
-                    placeholder="Cari film atau mood..."
-                    class="w-full rounded-full border border-slate-200/90 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 shadow-md shadow-slate-200/60 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-                >
-                <button type="submit" aria-label="Cari" class="absolute right-4 top-3 text-slate-400 hover:text-cyan-600">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"/>
-                        <path d="m21 21-4.3-4.3"/>
-                    </svg>
-                </button>
-            </form>
+            <!-- FORMULIR PENCARIAN FILM INTERAKTIF -->
+            <div class="relative hidden w-80 sm:block">
+                <form id="searchForm" class="relative" onsubmit="return tanganiSubmitPencarian(event)">
+                    <input
+                        id="searchInput"
+                        type="search"
+                        autocomplete="off"
+                        placeholder="Cari judul film (mis: Batman, Dune)..."
+                        class="w-full rounded-full border border-slate-200/90 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 shadow-md shadow-slate-200/60 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                    >
+                    <button type="submit" aria-label="Cari" class="absolute right-4 top-3 text-slate-400 hover:text-cyan-600">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </button>
+                </form>
+                <!-- Dropdown Hasil Pencarian Cepat Langsung -->
+                <div id="searchResultsDropdown" class="hidden absolute left-0 right-0 top-12 z-50 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
+                </div>
+            </div>
 
-            <!-- Membuka profile.php; pertahankan rute PHP ini saat memperbarui navigasi. -->
+            <!-- Membuka profile.php -->
             <a href="profile.php" class="flex shrink-0 items-center gap-3 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900">
                 Briang
                 <span class="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-700">
@@ -96,7 +103,6 @@
                             <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Sci-Fi · Petualangan</p>
                             <h2 class="mt-1 text-lg font-extrabold text-slate-900">Cerita besar. Pilihan tepat.</h2>
                         </div>
-                        <!-- Class kartu-film dihubungkan ke modal detail melalui JavaScript di bawah. -->
                         <button type="button" class="kartu-film flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0f172a] text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" aria-label="Lihat detail film"
                             data-id="4920"
                             data-title="Dune: Part Two"
@@ -115,17 +121,19 @@
             </div>
         </section>
 
-        <!-- BAGIAN GRID FILM: Tombol hero menuju bagian ini; setiap kartu film membuka modal detail. -->
-        <!-- ID movieGrid adalah tujuan tautan "Jelajahi Sekarang" di atas. -->
+        <!-- BAGIAN GRID FILM: Menampilkan koleksi film atau hasil pencarian. -->
         <section id="movieGrid" class="scroll-mt-24 mb-12">
             <div class="mb-5 flex items-end justify-between">
                 <div>
-                    <p class="mb-1 text-xs font-bold uppercase tracking-[.16em] text-indigo-600">Pilihan populer</p>
-                    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Trending sekarang</h2>
+                    <p id="gridHeaderCategory" class="mb-1 text-xs font-bold uppercase tracking-[.16em] text-indigo-600">Pilihan populer</p>
+                    <h2 id="gridHeaderTitle" class="text-2xl font-extrabold tracking-tight text-slate-900">Trending sekarang</h2>
                 </div>
-                <span class="hidden text-sm text-slate-500 sm:block">Dikurasi dari Database CineMatch</span>
+                <div id="gridHeaderSub" class="text-sm text-slate-500">
+                    <span class="hidden sm:inline">Dikurasi dari Database CineMatch</span>
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
+
+            <div id="gridItemsContainer" class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
                 <article class="kartu-film cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-3 shadow-md shadow-slate-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-100/50"
                     data-id="4920"
                     data-title="Dune: Part Two"
@@ -233,6 +241,7 @@
             </div>
         </section>
 
+        <!-- BAGIAN BARU DI INDONESIA -->
         <section class="mb-12">
             <div class="mb-5">
                 <p class="mb-1 text-xs font-bold uppercase tracking-[.16em] text-indigo-600">Temukan kisah baru</p>
@@ -250,10 +259,7 @@
                     data-actors="Ryan Gosling, Harrison Ford, Ana de Armas"
                     data-synopsis="Penemuan rahasia lama yang terkubur oleh seorang Blade Runner baru membawanya untuk melacak mantan Blade Runner Rick Deckard yang telah hilang selama tiga dekade."
                     data-poster="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&amp;fit=crop&amp;w=600&amp;q=85">
-                    <div class="relative overflow-hidden rounded-xl">
-                        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Bentang alam untuk Blade Runner 2049" class="aspect-[2/3] w-full object-cover">
-                        <span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.6</span>
-                    </div>
+                    <div class="relative overflow-hidden rounded-xl"><img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Bentang alam untuk Blade Runner 2049" class="aspect-[2/3] w-full object-cover"><span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.6</span></div>
                     <h3 class="mt-3 truncate text-sm font-bold text-slate-900">Blade Runner 2049</h3>
                     <p class="mt-1 text-xs text-slate-500">2017 <span class="px-1 text-slate-300">•</span> 2j 44m</p>
                     <span class="mt-2 inline-flex rounded-full border border-cyan-200/60 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-700">Sci-Fi</span>
@@ -271,10 +277,7 @@
                     data-actors="Amy Adams, Jeremy Renner, Forest Whitaker"
                     data-synopsis="Seorang profesor linguistik memimpin tim penyelidik elite militer saat pesawat luar angkasa raksasa mendarat di 12 lokasi berbeda di seluruh dunia."
                     data-poster="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&amp;fit=crop&amp;w=600&amp;q=85">
-                    <div class="relative overflow-hidden rounded-xl">
-                        <img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Pemandangan alam untuk Arrival" class="aspect-[2/3] w-full object-cover">
-                        <span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.5</span>
-                    </div>
+                    <div class="relative overflow-hidden rounded-xl"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Pemandangan alam untuk Arrival" class="aspect-[2/3] w-full object-cover"><span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.5</span></div>
                     <h3 class="mt-3 truncate text-sm font-bold text-slate-900">Arrival</h3>
                     <p class="mt-1 text-xs text-slate-500">2016 <span class="px-1 text-slate-300">•</span> 1j 56m</p>
                     <span class="mt-2 inline-flex rounded-full border border-cyan-200/60 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-700">Sci-Fi</span>
@@ -292,10 +295,7 @@
                     data-actors="Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong"
                     data-synopsis="Keserakahan dan diskriminasi kelas mengancam hubungan simbiosis yang baru terbentuk antara keluarga Park yang kaya raya dan klan Kim yang miskin."
                     data-poster="https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&amp;fit=crop&amp;w=600&amp;q=85">
-                    <div class="relative overflow-hidden rounded-xl">
-                        <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Suasana bioskop untuk Parasite" class="aspect-[2/3] w-full object-cover">
-                        <span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.8</span>
-                    </div>
+                    <div class="relative overflow-hidden rounded-xl"><img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Suasana bioskop untuk Parasite" class="aspect-[2/3] w-full object-cover"><span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.8</span></div>
                     <h3 class="mt-3 truncate text-sm font-bold text-slate-900">Parasite</h3>
                     <p class="mt-1 text-xs text-slate-500">2019 <span class="px-1 text-slate-300">•</span> 2j 12m</p>
                     <span class="mt-2 inline-flex rounded-full border border-cyan-200/60 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-700">Thriller</span>
@@ -313,10 +313,7 @@
                     data-actors="Simon Pegg, Nick Frost, Kate Ashfield"
                     data-synopsis="Seorang pria biasa di London harus menghadapi wabah kiamat zombie bersama sahabatnya demi menyelamatkan mantan pacar dan ibunya."
                     data-poster="https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&amp;fit=crop&amp;w=600&amp;q=85">
-                    <div class="relative overflow-hidden rounded-xl">
-                        <img src="https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Suasana horor komedi untuk Shaun of the Dead" class="aspect-[2/3] w-full object-cover">
-                        <span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.7</span>
-                    </div>
+                    <div class="relative overflow-hidden rounded-xl"><img src="https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Suasana horor komedi untuk Shaun of the Dead" class="aspect-[2/3] w-full object-cover"><span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.7</span></div>
                     <h3 class="mt-3 truncate text-sm font-bold text-slate-900">Shaun of the Dead</h3>
                     <p class="mt-1 text-xs text-slate-500">2004 <span class="px-1 text-slate-300">•</span> 1j 39m</p>
                     <span class="mt-2 inline-flex rounded-full border border-cyan-200/60 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-700">Horor</span>
@@ -334,10 +331,7 @@
                     data-actors="Tim Robbins, Morgan Freeman, Bob Gunton"
                     data-synopsis="Kisah harapan dan persahabatan seorang bankir yang dijatuhi hukuman penjara seumur hidup atas kejahatan yang tidak ia lakukan di penjara Shawshank."
                     data-poster="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&amp;fit=crop&amp;w=600&amp;q=85">
-                    <div class="relative overflow-hidden rounded-xl">
-                        <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Suasana penjara untuk The Shawshank Redemption" class="aspect-[2/3] w-full object-cover">
-                        <span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.9</span>
-                    </div>
+                    <div class="relative overflow-hidden rounded-xl"><img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&amp;fit=crop&amp;w=600&amp;q=85" alt="Suasana penjara untuk The Shawshank Redemption" class="aspect-[2/3] w-full object-cover"><span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ 4.9</span></div>
                     <h3 class="mt-3 truncate text-sm font-bold text-slate-900">The Shawshank Redemption</h3>
                     <p class="mt-1 text-xs text-slate-500">1994 <span class="px-1 text-slate-300">•</span> 2j 22m</p>
                     <span class="mt-2 inline-flex rounded-full border border-cyan-200/60 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-700">Drama</span>
@@ -393,11 +387,186 @@
     <script>
         const modalDetailFilm = document.getElementById("movieModal");
         const tombolTutupModal = document.getElementById("closeModal");
+        const searchInput = document.getElementById("searchInput");
+        const searchResultsDropdown = document.getElementById("searchResultsDropdown");
 
-        /**
-         * Menampilkan detail film saat pengguna memilih kartu film.
-         * Mengisi data modal dari dataset kartu film yang diklik.
-         */
+        // Simpan markup awal grid trending agar bisa dikembalikan kapan saja
+        const gridContainerEl = document.getElementById("gridItemsContainer");
+        const kontenAwalGrid = gridContainerEl ? gridContainerEl.innerHTML : "";
+
+        // Peta poster tematik sesuai genre utama
+        const posterPerGenre = {
+            'Action': 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=85',
+            'Adventure': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=85',
+            'Animation': 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=600&q=85',
+            'Biography': 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=600&q=85',
+            'Comedy': 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=600&q=85',
+            'Crime': 'https://images.unsplash.com/photo-1453873531674-2151bcd01707?auto=format&fit=crop&w=600&q=85',
+            'Documentary': 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=600&q=85',
+            'Drama': 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=85',
+            'Family': 'https://images.unsplash.com/photo-1476900543704-4312b78632f8?auto=format&fit=crop&w=600&q=85',
+            'Fantasy': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=85',
+            'History': 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=600&q=85',
+            'Horror': 'https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=600&q=85',
+            'Music': 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=85',
+            'Mystery': 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=600&q=85',
+            'Romance': 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=600&q=85',
+            'Sci-Fi': 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=600&q=85',
+            'Sport': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=600&q=85',
+            'Thriller': 'https://images.unsplash.com/photo-1484589065579-248aad0d8b13?auto=format&fit=crop&w=600&q=85',
+            'War': 'https://images.unsplash.com/photo-1543083477-4f785aeafaa9?auto=format&fit=crop&w=600&q=85',
+            'Western': 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=85',
+        };
+
+        function dapatkanPoster(genre) {
+            return posterPerGenre[genre] || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=85';
+        }
+
+        // ==========================================
+        // FITUR LIVE SEARCH PADA NAVBAR
+        // ==========================================
+        let debounceTimer;
+        searchInput.addEventListener("input", () => {
+            clearTimeout(debounceTimer);
+            const q = searchInput.value.trim();
+            if (q.length < 2) {
+                searchResultsDropdown.classList.add("hidden");
+                searchResultsDropdown.innerHTML = "";
+                return;
+            }
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/get_movies.php?q=${encodeURIComponent(q)}&limit=6`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    tampilkanDropdownHasil(data.items || []);
+                } catch (err) {
+                    console.error("Gagal memuat hasil pencarian:", err);
+                }
+            }, 250);
+        });
+
+        function tampilkanDropdownHasil(items) {
+            searchResultsDropdown.innerHTML = "";
+            if (!items || items.length === 0) {
+                searchResultsDropdown.innerHTML = `<p class="p-3 text-center text-xs text-slate-500">Tidak ada film yang cocok.</p>`;
+                searchResultsDropdown.classList.remove("hidden");
+                return;
+            }
+            items.forEach((film) => {
+                const itemBtn = document.createElement("button");
+                itemBtn.type = "button";
+                itemBtn.className = "flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-cyan-50";
+                const poster = dapatkanPoster(film.primary_genre);
+                itemBtn.innerHTML = `
+                    <img src="${poster}" alt="${film.title}" class="h-12 w-8 shrink-0 rounded-md object-cover">
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-bold text-slate-900">${film.title}</p>
+                        <p class="text-xs text-slate-500">${film.release_year || "-"} • ${film.primary_genre || "-"}</p>
+                    </div>
+                    <span class="shrink-0 text-xs font-bold text-amber-500">★ ${film.imdb_score || "0.0"}</span>
+                `;
+                itemBtn.addEventListener("click", () => {
+                    bukaDetailFilmDenganId(film.id, film);
+                    searchResultsDropdown.classList.add("hidden");
+                });
+                searchResultsDropdown.appendChild(itemBtn);
+            });
+            searchResultsDropdown.classList.remove("hidden");
+        }
+
+        // Tutup dropdown jika klik di luar
+        document.addEventListener("click", (e) => {
+            if (!searchInput.contains(e.target) && !searchResultsDropdown.contains(e.target)) {
+                searchResultsDropdown.classList.add("hidden");
+            }
+        });
+
+        // ==========================================
+        // SUBMIT PENCARIAN (UPDATE GRID FILM)
+        // ==========================================
+        async function tanganiSubmitPencarian(event) {
+            if (event) event.preventDefault();
+            searchResultsDropdown.classList.add("hidden");
+            const q = searchInput.value.trim();
+            if (q.length < 2) return false;
+
+            const gridContainer = document.getElementById("movieGrid");
+            const gridHeaderCategory = document.getElementById("gridHeaderCategory");
+            const gridHeaderTitle = document.getElementById("gridHeaderTitle");
+            const gridHeaderSub = document.getElementById("gridHeaderSub");
+
+            if (gridHeaderCategory) gridHeaderCategory.textContent = "Hasil Pencarian";
+            if (gridHeaderTitle) gridHeaderTitle.textContent = `Menampilkan: "${q}"`;
+            if (gridHeaderSub) {
+                gridHeaderSub.innerHTML = `<button type="button" onclick="muatKembaliTrending()" class="font-bold text-indigo-600 transition hover:underline">← Kembali ke Trending</button>`;
+            }
+            if (gridContainerEl) {
+                gridContainerEl.innerHTML = `<div class="col-span-full py-16 text-center text-sm font-semibold text-slate-500">Sedang mencari film di database...</div>`;
+            }
+
+            gridContainer.scrollIntoView({ behavior: "smooth" });
+
+            try {
+                const res = await fetch(`/api/get_movies.php?q=${encodeURIComponent(q)}&limit=15`);
+                const data = await res.json();
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    gridContainerEl.innerHTML = `
+                        <div class="col-span-full py-16 text-center">
+                            <p class="text-base font-bold text-slate-800">Tidak ada film yang cocok dengan "${q}".</p>
+                            <p class="mt-1 text-xs text-slate-500">Coba gunakan kata kunci judul film lainnya.</p>
+                            <button type="button" onclick="muatKembaliTrending()" class="mt-4 rounded-full bg-slate-900 px-5 py-2 text-xs font-bold text-white transition hover:bg-slate-800">
+                                Kembali ke Trending
+                            </button>
+                        </div>
+                    `;
+                    return false;
+                }
+
+                gridContainerEl.innerHTML = "";
+                items.forEach((film) => {
+                    const poster = dapatkanPoster(film.primary_genre);
+                    const card = document.createElement("article");
+                    card.className = "kartu-film cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-3 shadow-md shadow-slate-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-100/50";
+                    card.innerHTML = `
+                        <div class="relative overflow-hidden rounded-xl">
+                            <img src="${poster}" alt="${film.title}" class="aspect-[2/3] w-full object-cover">
+                            <span class="absolute right-2 top-2 rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-sm backdrop-blur-md">★ ${film.imdb_score || "0.0"}</span>
+                        </div>
+                        <h3 class="mt-3 truncate text-sm font-bold text-slate-900">${film.title}</h3>
+                        <p class="mt-1 text-xs text-slate-500">${film.release_year || "-"} • ${film.primary_genre || "-"}</p>
+                        <span class="mt-2 inline-flex rounded-full border border-cyan-200/60 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-700">${film.primary_genre || "Film"}</span>
+                    `;
+                    card.addEventListener("click", () => bukaDetailFilmDenganId(film.id, film));
+                    gridContainerEl.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Gagal memuat hasil pencarian:", err);
+                gridContainerEl.innerHTML = `<div class="col-span-full py-16 text-center text-sm font-semibold text-rose-600">Terjadi gangguan saat mengambil data film.</div>`;
+            }
+            return false;
+        }
+
+        // Fungsi mengembalikan grid ke daftar trending semula
+        function muatKembaliTrending() {
+            document.getElementById("gridHeaderCategory").textContent = "Pilihan populer";
+            document.getElementById("gridHeaderTitle").textContent = "Trending sekarang";
+            document.getElementById("gridHeaderSub").innerHTML = `<span class="hidden sm:inline">Dikurasi dari Database CineMatch</span>`;
+            if (gridContainerEl && kontenAwalGrid) {
+                gridContainerEl.innerHTML = kontenAwalGrid;
+                // Pasang kembali event listener klik kartu
+                gridContainerEl.querySelectorAll(".kartu-film").forEach((kartu) => {
+                    kartu.addEventListener("click", bukaDetailFilm);
+                });
+            }
+            searchInput.value = "";
+        }
+
+        // ==========================================
+        // DETAIL MODAL FILM
+        // ==========================================
         function bukaDetailFilm(event) {
             const kartu = event.currentTarget;
             if (kartu && kartu.dataset.title) {
@@ -416,41 +585,85 @@
             document.body.style.overflow = "hidden";
         }
 
-        /**
-         * Menyembunyikan detail film saat tombol tutup, latar modal, atau tombol Escape digunakan.
-         */
+        async function bukaDetailFilmDenganId(id, fallbackFilm) {
+            // Tampilkan modal langsung dengan data cepat
+            if (fallbackFilm) {
+                document.getElementById("modalTitle").textContent = fallbackFilm.title;
+                document.getElementById("modalMeta").innerHTML = `${fallbackFilm.release_year || "-"} <span class="px-1 text-slate-300">•</span> ${fallbackFilm.primary_genre || "-"} <span class="px-1 text-slate-300">•</span> <span class="text-amber-500">★ ${fallbackFilm.imdb_score || "-"}</span>`;
+                document.getElementById("modalActors").textContent = "Memuat data aktor...";
+                document.getElementById("modalSynopsis").textContent = fallbackFilm.plot_keywords ? `Tema cerita: ${fallbackFilm.plot_keywords.replace(/\|/g, ", ")}.` : "Memuat sinopsis...";
+                document.getElementById("modalGenre").textContent = fallbackFilm.primary_genre || "-";
+                const posterEl = document.getElementById("modalPoster");
+                posterEl.src = dapatkanPoster(fallbackFilm.primary_genre);
+                posterEl.alt = `Poster ${fallbackFilm.title}`;
+            }
+            modalDetailFilm.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+
+            // Ambil rincian lengkap dari database API
+            try {
+                const res = await fetch(`/api/get_movies.php?id=${id}`);
+                if (res.ok) {
+                    const detail = await res.json();
+                    document.getElementById("modalTitle").textContent = detail.title;
+                    const durasi = detail.duration ? `${detail.duration} menit` : "-";
+                    const genreLengkap = detail.genres ? detail.genres.replace(/\|/g, ", ") : detail.primary_genre;
+                    document.getElementById("modalMeta").innerHTML = `${detail.release_year || "-"} <span class="px-1 text-slate-300">•</span> ${genreLengkap} <span class="px-1 text-slate-300">•</span> ${durasi} <span class="px-1 text-slate-300">•</span> <span class="text-amber-500">★ ${detail.imdb_score || "-"}</span>`;
+
+                    const actors = [detail.actor_1_name, detail.actor_2_name, detail.actor_3_name].filter(Boolean);
+                    document.getElementById("modalActors").textContent = actors.length > 0 ? actors.join(", ") : "Informasi pemeran belum tersedia.";
+
+                    let sinopsis = "";
+                    if (detail.plot_keywords) {
+                        sinopsis += `Tema cerita: ${detail.plot_keywords.replace(/\|/g, ", ")}. `;
+                    }
+                    if (detail.director_name) {
+                        sinopsis += `Disutradarai oleh ${detail.director_name}. `;
+                    }
+                    if (detail.country) {
+                        sinopsis += `Produksi ${detail.country}.`;
+                    }
+                    document.getElementById("modalSynopsis").textContent = sinopsis || "Sinopsis belum tersedia.";
+                    document.getElementById("modalGenre").textContent = genreLengkap;
+                }
+            } catch (e) {
+                console.warn("Gagal memuat rincian film tambahan:", e);
+            }
+        }
+
         function tutupDetailFilm() {
             modalDetailFilm.classList.add("hidden");
             document.body.style.overflow = "";
         }
 
-        /**
-         * Menutup modal hanya jika klik mengenai latar di luar isi modal.
-         */
         function tanganiKlikLatarModal(event) {
             if (event.target === modalDetailFilm) {
                 tutupDetailFilm();
             }
         }
 
-        /**
-         * Menutup modal detail film saat tombol Escape ditekan.
-         */
         function tanganiTombolEscape(event) {
             if (event.key === "Escape") {
                 tutupDetailFilm();
             }
         }
 
-        // Hubungkan setiap kartu film ke modal detail
+        // Pasang event listener awal untuk kartu film
         document.querySelectorAll(".kartu-film").forEach((kartuFilm) => {
             kartuFilm.addEventListener("click", bukaDetailFilm);
         });
 
-        // Hubungkan tombol tutup, latar modal, dan Escape ke fungsi penutup modal.
         tombolTutupModal.addEventListener("click", tutupDetailFilm);
         modalDetailFilm.addEventListener("click", tanganiKlikLatarModal);
         document.addEventListener("keydown", tanganiTombolEscape);
+
+        // Jika halaman dibuka dengan parameter ?search=... jalankan pencarian langsung
+        const parameterUrl = new URLSearchParams(window.location.search);
+        const kueriCari = parameterUrl.get("search");
+        if (kueriCari && kueriCari.trim() !== "") {
+            searchInput.value = kueriCari.trim();
+            tanganiSubmitPencarian(null);
+        }
     </script>
 </body>
 </html>
