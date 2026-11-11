@@ -28,9 +28,9 @@
                 CineMatch<span class="text-indigo-600">.</span>
             </a>
 
-            <!-- Formulir Pencarian: Terhubung ke Chatbot AI Rekomendasi -->
-            <form class="relative hidden w-72 sm:block" onsubmit="const q = this.querySelector('input').value.trim(); if(q) window.location.href='chat.php?q=' + encodeURIComponent(q); return false;">
-                <input type="search" placeholder="Cari film atau mood..." class="w-full rounded-full border border-slate-200/90 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 shadow-md shadow-slate-200/60 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+            <!-- Formulir Pencarian: Menampilkan hasil pencarian di beranda -->
+            <form class="relative hidden w-72 sm:block" onsubmit="const q = this.querySelector('input').value.trim(); if(q) window.location.href='index.php?search=' + encodeURIComponent(q); return false;">
+                <input type="search" placeholder="Cari film..." class="w-full rounded-full border border-slate-200/90 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 shadow-md shadow-slate-200/60 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-200">
                 <button type="submit" aria-label="Cari" class="absolute right-4 top-3 text-slate-400 hover:text-cyan-600">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="11" cy="11" r="7"/>

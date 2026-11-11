@@ -1,11 +1,14 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
+$movieId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 12;
 $query = isset($_GET['q']) ? trim($_GET['q']) : '';
 
-if ($query !== '') {
+if ($movieId > 0) {
+    $url = "http://backend:8000/movies/" . $movieId;
+} elseif ($query !== '') {
     $url = "http://backend:8000/search?q=" . urlencode($query) . "&limit=" . $limit;
 } else {
     $url = "http://backend:8000/movies?page=" . $page . "&limit=" . $limit;
