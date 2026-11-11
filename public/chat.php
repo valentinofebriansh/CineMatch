@@ -322,6 +322,14 @@
 
         // Formulir chat mengirim permintaan rekomendasi tanpa memuat ulang halaman.
         formulirChat.addEventListener("submit", kirimPermintaanRekomendasi);
+
+        // Jika terdapat parameter pencarian di URL (?q=...), jalankan otomatis saat halaman dibuka
+        const parameterUrl = new URLSearchParams(window.location.search);
+        const kueriAwal = parameterUrl.get('q');
+        if (kueriAwal && kueriAwal.trim() !== '') {
+            kolomPesan.value = kueriAwal.trim();
+            formulirChat.dispatchEvent(new Event('submit'));
+        }
     </script>
 </body>
 </html>
