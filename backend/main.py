@@ -1,11 +1,12 @@
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-
 import math
 import os
 
 import pymysql
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+
+from nlp_rules import parse_query
+from llm_parser import parse_with_llm
 
 app = FastAPI(title="CineMatch API")
 
@@ -138,10 +139,11 @@ def search_movies(
 
 @app.get("/recommend")
 def recommend_movies(
-    genre: str | None = Query(None, max_length=30, description="Contoh: Horror"),
+    genre: str | None = Query(None, max_length=100, description="Contoh: Horror atau Comedy,Romance"),
     start_year: int | None = Query(None, ge=1900, le=2030),
     end_year: int | None = Query(None, ge=1900, le=2030),
     min_rating: float | None = Query(None, ge=0, le=10),
+    keyword: str | None = Query(None, max_length=100, description="Satu atau beberapa kata kunci, pisah koma"),
     min_votes: int = Query(1000, ge=0, description="Minimal jumlah penilai"),
     limit: int = Query(12, ge=1, le=50),
 ):
@@ -154,13 +156,11 @@ def recommend_movies(
     params = [min_votes]
 
     if genre is not None and genre.strip():
-        genre_clean = genre.strip()
-        safe = (
-            genre_clean.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        )
-        # Pemisah '|' dipasang di kiri-kanan supaya "Music" tidak ikut "Musical"
-        conditions.append("CONCAT('|', genres, '|') LIKE %s")
-        params.append("%|" + safe + "|%")
+        for g in [x.strip() for x in genre.split(",") if x.strip()][:3]:
+            safe = g.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            # Pemisah '|' dipasang di kiri-kanan supaya "Music" tidak ikut "Musical"
+            conditions.append("CONCAT('|', genres, '|') LIKE %s")
+            params.append("%|" + safe + "|%")
     if start_year is not None:
         conditions.append("release_year >= %s")
         params.append(start_year)
@@ -170,6 +170,16 @@ def recommend_movies(
     if min_rating is not None:
         conditions.append("imdb_score >= %s")
         params.append(min_rating)
+
+    if keyword is not None and keyword.strip():
+        kws = [x.strip() for x in keyword.split(",") if x.strip()][:5]
+        if kws:
+            parts = []
+            for kw in kws:
+                safe_kw = kw.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                parts.append("plot_keywords LIKE %s")
+                params.append("%" + safe_kw + "%")
+            conditions.append("(" + " OR ".join(parts) + ")")
 
     where_sql = " AND ".join(conditions)
 
@@ -198,6 +208,7 @@ def recommend_movies(
                 "start_year": start_year,
                 "end_year": end_year,
                 "min_rating": min_rating,
+                "keyword": keyword,
                 "min_votes": min_votes,
             },
             "total": total,
@@ -205,3 +216,61 @@ def recommend_movies(
         }
     finally:
         conn.close()
+
+@app.get("/smart-recommend")
+def smart_recommend(
+    q: str = Query(..., min_length=2, max_length=200, description="Kalimat bebas"),
+    limit: int = Query(12, ge=1, le=50),
+):
+    mode = "llm"
+    fallback_reason = None
+    try:
+        parsed = parse_with_llm(q)
+    except Exception as e:
+        mode = "rules"
+        fallback_reason = f"{type(e).__name__}: {e}"
+        parsed = parse_query(q)
+
+    if mode == "llm" and all(v is None for v in parsed.values()):
+        mode = "rules"
+        fallback_reason = "AI tidak menemukan filter dari kalimat ini"
+        parsed = parse_query(q)
+
+    if all(v is None for v in parsed.values()):
+        return {
+            "query": q,
+            "mode": mode,
+            "fallback_reason": fallback_reason,
+            "understood": False,
+            "message": "Kalimat belum dipahami. Coba sebut genre, tahun, atau rating.",
+            "parsed": parsed,
+            "total": 0,
+            "items": [],
+        }
+
+    def run(keyword):
+        return recommend_movies(
+            genre=parsed["genre"],
+            start_year=parsed["start_year"],
+            end_year=parsed["end_year"],
+            min_rating=parsed["min_rating"],
+            keyword=keyword,
+            min_votes=1000,
+            limit=limit,
+        )
+
+    result = run(parsed["keyword"])
+    note = None
+    if result["total"] == 0 and parsed["keyword"]:
+        result = run(None)
+        note = "Tidak ada film yang cocok dengan kata kunci cerita, jadi kata kunci diabaikan."
+
+    return {
+        "query": q,
+        "mode": mode,
+        "fallback_reason": fallback_reason,
+        "note": note,
+        "understood": True,
+        "parsed": parsed,
+        **result,
+    }
