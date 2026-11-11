@@ -19,5 +19,14 @@ services:
       - ./database/cinematch_db.sql:/docker-entrypoint-initdb.d/cinematch_db.sql:ro
       - cinematch_data:/var/lib/mysql
 
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+
 volumes:
   cinematch_data:
