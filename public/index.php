@@ -72,9 +72,10 @@
                     <a href="#movieGrid" class="rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-cyan-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:from-cyan-600 hover:to-teal-600 hover:shadow-xl hover:shadow-cyan-100/50">
                         Jelajahi Sekarang
                     </a>
-                    <a href="chat.php" class="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md">
-                        Tanya Chatbot AI 🤖
-                    </a>
+                    <div class="flex items-center gap-2 text-sm text-slate-600">
+                        <span class="text-amber-400">★</span>
+                        <span><strong class="font-bold text-slate-900">4.9</strong> dari 1200+ Cinephile</span>
+                    </div>
                 </div>
             </div>
 
