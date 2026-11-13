@@ -1,8 +1,11 @@
 <?php
 /**
  * API: Update profil pengguna (nama & foto)
- * Metode: POST
- * Field form-data: name (teks), photo (file opsional)
+ * Metode : POST
+ * Fields : name (string), photo (file, opsional)
+ *
+ * Nama file foto selalu disimpan sebagai "profil.{ext}" (jpg/png/gif/webp)
+ * sehingga selalu mudah ditemukan dan tidak menumpuk file lama.
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -14,13 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// ── Cek koneksi DB ────────────────────────────────────────────
 if (!$pdo) {
     http_response_code(503);
-    echo json_encode(['error' => 'Database tidak tersedia.']);
+    echo json_encode([
+        'error' => 'Koneksi database gagal. Pastikan container MySQL sudah berjalan '
+                 . 'dan tabel users sudah dibuat (jalankan: docker compose down -v && docker compose up --build).'
+                 . (isset($dbLastError) ? ' Detail: ' . $dbLastError : ''),
+    ]);
     exit;
 }
 
-$userId   = 1; // Single-user app
+$userId   = 1;
 $namaBaru = trim($_POST['name'] ?? '');
 
 if ($namaBaru === '') {
@@ -29,21 +37,29 @@ if ($namaBaru === '') {
     exit;
 }
 
+// ── Peta ekstensi yang diizinkan ─────────────────────────────
+$mimeToExt = [
+    'image/jpeg' => 'jpg',
+    'image/png'  => 'png',
+    'image/gif'  => 'gif',
+    'image/webp' => 'webp',
+];
+
 $photoPath = null;
 
 // ── Proses upload foto jika ada ──────────────────────────────
 if (!empty($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-    $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    $fileMime    = mime_content_type($_FILES['photo']['tmp_name']);
+    $fileMime = mime_content_type($_FILES['photo']['tmp_name']);
 
-    if (!in_array($fileMime, $allowedMime, true)) {
+    if (!array_key_exists($fileMime, $mimeToExt)) {
         http_response_code(400);
         echo json_encode(['error' => 'Tipe file tidak diizinkan. Gunakan JPG, PNG, GIF, atau WEBP.']);
         exit;
     }
 
-    $ext        = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-    $fileName   = 'avatar_' . $userId . '_' . time() . '.' . strtolower($ext);
+    // Nama file selalu "profil.{ext}" — file lama otomatis tertimpa
+    $ext        = $mimeToExt[$fileMime];
+    $fileName   = 'profil.' . $ext;                     // ← selalu "profil.jpg" / "profil.png" / dll
     $uploadDir  = __DIR__ . '/uploads/avatars/';
     $uploadPath = $uploadDir . $fileName;
 
@@ -53,7 +69,7 @@ if (!empty($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
 
     if (!move_uploaded_file($_FILES['photo']['tmp_name'], $uploadPath)) {
         http_response_code(500);
-        echo json_encode(['error' => 'Gagal menyimpan foto.']);
+        echo json_encode(['error' => 'Gagal menyimpan foto ke server.']);
         exit;
     }
 
@@ -62,18 +78,22 @@ if (!empty($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
 
 // ── Update database ──────────────────────────────────────────
 try {
-    if ($photoPath !== null) {
-        // Hapus foto lama jika ada
-        $stmtOld = $pdo->prepare('SELECT photo_path FROM users WHERE id = ?');
-        $stmtOld->execute([$userId]);
-        $oldRow = $stmtOld->fetch();
-        if ($oldRow && $oldRow['photo_path']) {
-            $oldFile = __DIR__ . '/' . $oldRow['photo_path'];
-            if (file_exists($oldFile)) {
-                @unlink($oldFile);
-            }
-        }
+    // Pastikan tabel users ada; jika belum, buat otomatis
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS users (
+            id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            username   VARCHAR(100) NOT NULL DEFAULT 'Briang',
+            photo_path VARCHAR(500) NULL,
+            created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
 
+    // Pastikan baris user 1 ada
+    $pdo->exec("INSERT IGNORE INTO users (id, username) VALUES (1, 'Briang')");
+
+    if ($photoPath !== null) {
         $stmt = $pdo->prepare('UPDATE users SET username = ?, photo_path = ? WHERE id = ?');
         $stmt->execute([$namaBaru, $photoPath, $userId]);
     } else {
@@ -81,7 +101,7 @@ try {
         $stmt->execute([$namaBaru, $userId]);
     }
 
-    // Ambil data terbaru untuk dikembalikan
+    // Ambil data terbaru
     $stmtGet = $pdo->prepare('SELECT username, photo_path FROM users WHERE id = ?');
     $stmtGet->execute([$userId]);
     $user = $stmtGet->fetch();
@@ -91,7 +111,8 @@ try {
         'username'   => $user['username'],
         'photo_path' => $user['photo_path'],
     ]);
+
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Gagal memperbarui profil: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Gagal update profil: ' . $e->getMessage()]);
 }

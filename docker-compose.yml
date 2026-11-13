@@ -15,7 +15,8 @@ services:
       DB_USER: root
       DB_PASSWORD: root
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: mysql:8.0
@@ -28,6 +29,12 @@ services:
       - ./database/cinematch_db.sql:/docker-entrypoint-initdb.d/01_cinematch_db.sql:ro
       - ./database/users_watchlist.sql:/docker-entrypoint-initdb.d/02_users_watchlist.sql:ro
       - cinematch_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
 
   backend:
     build: ./backend
@@ -38,7 +45,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   cinematch_data:

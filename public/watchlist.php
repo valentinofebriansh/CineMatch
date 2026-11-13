@@ -15,9 +15,32 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if (!$pdo) {
     http_response_code(503);
-    echo json_encode(['error' => 'Database tidak tersedia.']);
+    echo json_encode(['error' => 'Database tidak tersedia. ' . (isset($dbLastError) ? $dbLastError : '')]);
     exit;
 }
+
+// Pastikan tabel watchlist ada secara otomatis
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS watchlist (
+            id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id    INT UNSIGNED NOT NULL DEFAULT 1,
+            movie_id   INT UNSIGNED NOT NULL,
+            title      VARCHAR(255) NOT NULL,
+            year       SMALLINT     NULL,
+            duration   VARCHAR(20)  NULL,
+            genre      VARCHAR(100) NULL,
+            rating     DECIMAL(3,1) NULL,
+            director   VARCHAR(100) NULL,
+            actors     TEXT         NULL,
+            synopsis   TEXT         NULL,
+            poster_url VARCHAR(500) NULL,
+            added_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_user_movie (user_id, movie_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (PDOException $e) { /* lanjutkan */ }
 
 // ── GET: Ambil daftar watchlist ──────────────────────────────
 if ($method === 'GET') {
