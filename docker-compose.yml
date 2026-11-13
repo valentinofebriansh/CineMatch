@@ -1,11 +1,19 @@
 services:
   web:
-    image: php:8.1-apache
+    build:
+      context: .
+      dockerfile: Dockerfile.web
     ports:
       - "8080:80"
     volumes:
       - ./public:/var/www/html
       - ./api:/var/www/html/api
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: cinematch
+      DB_USER: root
+      DB_PASSWORD: root
     depends_on:
       - db
 
@@ -15,8 +23,10 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cinematch
     volumes:
-      - ./database/cinematch_db.sql:/docker-entrypoint-initdb.d/cinematch_db.sql:ro
+      - ./database/cinematch_db.sql:/docker-entrypoint-initdb.d/01_cinematch_db.sql:ro
+      - ./database/users_watchlist.sql:/docker-entrypoint-initdb.d/02_users_watchlist.sql:ro
       - cinematch_data:/var/lib/mysql
 
   backend:
