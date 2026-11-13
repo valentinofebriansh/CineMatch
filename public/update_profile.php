@@ -6,11 +6,17 @@
  */
 
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../api/db_connect.php';
+require_once __DIR__ . '/db_connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Metode tidak diizinkan.']);
+    exit;
+}
+
+if (!$pdo) {
+    http_response_code(503);
+    echo json_encode(['error' => 'Database tidak tersedia.']);
     exit;
 }
 

@@ -10,17 +10,20 @@
  *    dan menghapus film tersebut dari DB + UI.
  */
 
-require_once __DIR__ . '/../api/db_connect.php';
+require_once __DIR__ . '/db_connect.php';
 
 $userId = 1;
 
 // ── Ambil data user dari DB ──────────────────────────────────
-$stmtUser = $pdo->prepare('SELECT username, photo_path FROM users WHERE id = ?');
-$stmtUser->execute([$userId]);
-$user = $stmtUser->fetch();
-if (!$user) {
-    // Baris default jika tabel masih kosong
-    $user = ['username' => 'Briang', 'photo_path' => null];
+$user = ['username' => 'Briang', 'photo_path' => null];
+
+if ($pdo) {
+    try {
+        $stmtUser = $pdo->prepare('SELECT username, photo_path FROM users WHERE id = ?');
+        $stmtUser->execute([$userId]);
+        $row = $stmtUser->fetch();
+        if ($row) $user = $row;
+    } catch (Exception $e) { /* fallback ke default */ }
 }
 
 $userName    = htmlspecialchars($user['username'], ENT_QUOTES);
@@ -28,11 +31,18 @@ $userPhoto   = $user['photo_path'];
 $userInitial = mb_strtoupper(mb_substr($user['username'], 0, 1));
 
 // ── Ambil watchlist dari DB ──────────────────────────────────
-$stmtWl = $pdo->prepare(
-    'SELECT * FROM watchlist WHERE user_id = ? ORDER BY added_at DESC'
-);
-$stmtWl->execute([$userId]);
-$watchlistItems = $stmtWl->fetchAll();
+$watchlistItems = [];
+
+if ($pdo) {
+    try {
+        $stmtWl = $pdo->prepare(
+            'SELECT * FROM watchlist WHERE user_id = ? ORDER BY added_at DESC'
+        );
+        $stmtWl->execute([$userId]);
+        $watchlistItems = $stmtWl->fetchAll();
+    } catch (Exception $e) { /* fallback ke kosong */ }
+}
+
 $watchlistCount = count($watchlistItems);
 ?>
 <!DOCTYPE html>

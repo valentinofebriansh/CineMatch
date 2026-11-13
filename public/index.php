@@ -3,15 +3,20 @@
  * index.php – Beranda CineMatch
  * Membaca nama & foto user dari DB untuk ditampilkan di navbar.
  */
-require_once __DIR__ . '/../api/db_connect.php';
+require_once __DIR__ . '/db_connect.php';
 
-$userId = 1;
-$stmtU  = $pdo->prepare('SELECT username, photo_path FROM users WHERE id = ?');
-$stmtU->execute([$userId]);
-$navUser = $stmtU->fetch();
-if (!$navUser) {
-    $navUser = ['username' => 'Briang', 'photo_path' => null];
+$userId  = 1;
+$navUser = ['username' => 'Briang', 'photo_path' => null];
+
+if ($pdo) {
+    try {
+        $stmtU = $pdo->prepare('SELECT username, photo_path FROM users WHERE id = ?');
+        $stmtU->execute([$userId]);
+        $row = $stmtU->fetch();
+        if ($row) $navUser = $row;
+    } catch (Exception $e) { /* fallback ke default */ }
 }
+
 $navUserName    = htmlspecialchars($navUser['username'], ENT_QUOTES);
 $navUserPhoto   = $navUser['photo_path'];
 $navUserInitial = mb_strtoupper(mb_substr($navUser['username'], 0, 1));
