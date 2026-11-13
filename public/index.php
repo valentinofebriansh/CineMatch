@@ -1,3 +1,21 @@
+<?php
+/**
+ * index.php – Beranda CineMatch
+ * Membaca nama & foto user dari DB untuk ditampilkan di navbar.
+ */
+require_once __DIR__ . '/../api/db_connect.php';
+
+$userId = 1;
+$stmtU  = $pdo->prepare('SELECT username, photo_path FROM users WHERE id = ?');
+$stmtU->execute([$userId]);
+$navUser = $stmtU->fetch();
+if (!$navUser) {
+    $navUser = ['username' => 'Briang', 'photo_path' => null];
+}
+$navUserName    = htmlspecialchars($navUser['username'], ENT_QUOTES);
+$navUserPhoto   = $navUser['photo_path'];
+$navUserInitial = mb_strtoupper(mb_substr($navUser['username'], 0, 1));
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -53,9 +71,13 @@
 
             <!-- Membuka profile.php -->
             <a href="profile.php" class="flex shrink-0 items-center gap-3 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900">
-                Briang
-                <span class="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-700">
-                    B
+                <?= $navUserName ?>
+                <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-700 overflow-hidden">
+                    <?php if ($navUserPhoto): ?>
+                        <img src="<?= htmlspecialchars($navUserPhoto) ?>" alt="Foto profil" class="h-full w-full object-cover rounded-full">
+                    <?php else: ?>
+                        <?= $navUserInitial ?>
+                    <?php endif; ?>
                     <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-[#ccff00]"></span>
                 </span>
             </a>
